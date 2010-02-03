@@ -91,8 +91,8 @@ class SQLCompiler(NonrelCompiler):
                 if not field.null and entity.get(field.column,
                         field.default) is None:
                     raise ValueError("Non-nullable field %s can't be None!" % field.name)
-                result.append(self.convert_value_from_db(field.db_type(),
-                    entity.get(field.column, field.default)))
+                result.append(self.convert_value_from_db(field.db_type(
+                    connection=self.connection), entity.get(field.column, field.default)))
             yield result
 
     def has_results(self):
@@ -318,6 +318,11 @@ class SQLCompiler(NonrelCompiler):
         return result
 
     def convert_value_from_db(self, db_type, value):
+        if isinstance(value, (list, tuple)) and db_type.startswith('ListField:'):
+            db_sub_type = db_type.split('ListField:')[1]
+            for i, val in enumerate(value):
+                value[i] = self.convert_value_from_db(db_sub_type, val)
+
         # the following GAE database types are all unicode subclasses, cast them
         # to unicode so they appear like pure unicode instances for django
         if isinstance(value, (Category, Email, Link, PhoneNumber, PostalAddress,
@@ -366,6 +371,10 @@ class SQLCompiler(NonrelCompiler):
         return value
 
     def convert_value_for_db(self, db_type, value):
+        if isinstance(value, (list, tuple)) and db_type.startswith('ListField:'):
+            db_sub_type = db_type.split('ListField:')[1]
+            for i, val in enumerate(value):
+                value[i] = self.convert_value_for_db(db_sub_type, val)
         # long text fields cannot be indexed on GAE so use GAE's database type
         # Text
         if db_type == 'gae_key':

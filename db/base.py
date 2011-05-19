@@ -133,8 +133,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         elif stub_manager.active_stubs == 'test':
             stub_manager.deactivate_test_stubs()
             stub_manager.activate_test_stubs()
-#        elif on_production_server or have_appserver:
-#            delete_all_entities()
         else:
             destroy_datastore(get_datastore_paths(self.settings_dict))
             stub_manager.setup_local_stubs(self)
